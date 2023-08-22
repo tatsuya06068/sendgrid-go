@@ -44,7 +44,7 @@ func (sgd *SendGridDriver) SendMail(sendInfo entity.SendInfo) error {
 
 }
 
-func (sgd *SendGridDriver) SendMailWithTemplate(sendInfo entity.SendInfoWithTemplate) error {
+func (sgd *SendGridDriver) SendMailWithTemplate(sendInfo entity.SendInfoWithTemplate, tempValues ...map[string]any) error {
 
 	from := mail.NewEmail(sendInfo.BaseInfo.FromName, sendInfo.BaseInfo.FromAddress)
 	subject := sendInfo.BaseInfo.Subject
@@ -52,6 +52,18 @@ func (sgd *SendGridDriver) SendMailWithTemplate(sendInfo entity.SendInfoWithTemp
 
 	message := mail.NewV3MailInit(from, subject, to)
 	message.SetTemplateID(sendInfo.TemplateID)
+
+	if len(tempValues) != 0 {
+		p := mail.NewPersonalization()
+
+		for _, valueMap := range tempValues {
+			for key, value := range valueMap {
+				p.SetDynamicTemplateData(key, value)
+			}
+		}
+
+		message.AddPersonalizations(p)
+	}
 
 	client := sendgrid.NewSendClient(sgd.ApiKey)
 	response, err := client.Send(message)

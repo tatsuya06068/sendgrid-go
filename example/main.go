@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"example/sendgrid/driver"
 	"example/sendgrid/entity"
 	"log"
@@ -27,7 +28,7 @@ func sendMail(driver driver.SendGridDriver) {
 		HtmlContent:      "<strong>test</strong>",
 	}
 
-	err := driver.SendMail(info)
+	err := driver.SendMail(context.Background(), info)
 
 	if err != nil {
 		log.Fatal(err)
@@ -48,7 +49,7 @@ func SendMailWithTemplate(driver driver.SendGridDriver) {
 		TemplateID: os.Getenv("TEMPLATE_ID"),
 	}
 
-	err := driver.SendMailWithTemplate(info)
+	err := driver.SendMailWithTemplate(context.Background(), info)
 
 	if err != nil {
 		log.Fatal(err)

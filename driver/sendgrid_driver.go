@@ -1,25 +1,32 @@
 package driver
 
 import (
+	"context"
 	"example/sendgrid/entity"
 	"fmt"
 	"log"
 
+	"github.com/sendgrid/rest"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
 
+type IClient interface {
+	SendWithContext(ctx context.Context, email *mail.SGMailV3) (*rest.Response, error)
+}
+
 type SendGridDriver struct {
-	ApiKey string
+	client IClient
 }
 
 func NewSendGridDriver(apiKey string) SendGridDriver {
+	client := sendgrid.NewSendClient(apiKey)
 	return SendGridDriver{
-		ApiKey: apiKey,
+		client: client,
 	}
 }
 
-func (sgd *SendGridDriver) SendMail(sendInfo entity.SendInfo) error {
+func (sgd *SendGridDriver) SendMail(ctx context.Context, sendInfo entity.SendInfo) error {
 
 	from := mail.NewEmail(sendInfo.BaseInfo.FromName, sendInfo.BaseInfo.FromAddress)
 	subject := sendInfo.BaseInfo.Subject
@@ -29,8 +36,7 @@ func (sgd *SendGridDriver) SendMail(sendInfo entity.SendInfo) error {
 
 	message := mail.NewSingleEmail(from, subject, to, plainTextContent, htmlContent)
 
-	client := sendgrid.NewSendClient(sgd.ApiKey)
-	response, err := client.Send(message)
+	response, err := sgd.client.SendWithContext(ctx, message)
 
 	if err != nil {
 		log.Println(err)
@@ -44,7 +50,7 @@ func (sgd *SendGridDriver) SendMail(sendInfo entity.SendInfo) error {
 
 }
 
-func (sgd *SendGridDriver) SendMailWithTemplate(sendInfo entity.SendInfoWithTemplate, tempValues ...map[string]any) error {
+func (sgd *SendGridDriver) SendMailWithTemplate(ctx context.Context, sendInfo entity.SendInfoWithTemplate, tempValues ...map[string]any) error {
 
 	from := mail.NewEmail(sendInfo.BaseInfo.FromName, sendInfo.BaseInfo.FromAddress)
 	subject := sendInfo.BaseInfo.Subject
@@ -65,8 +71,7 @@ func (sgd *SendGridDriver) SendMailWithTemplate(sendInfo entity.SendInfoWithTemp
 		message.AddPersonalizations(p)
 	}
 
-	client := sendgrid.NewSendClient(sgd.ApiKey)
-	response, err := client.Send(message)
+	response, err := sgd.client.SendWithContext(ctx, message)
 
 	if err != nil {
 		log.Println(err)
